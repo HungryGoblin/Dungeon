@@ -3,7 +3,6 @@ package ru.geekbrains.dungeon;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 
@@ -11,6 +10,7 @@ public class DungeonGame extends ApplicationAdapter {
     private TextureAtlas atlas;
     private SpriteBatch batch;
     private ProjectileController projectileController;
+    private CharacterController characterController;
     private GameMap gameMap;
     private Hero hero;
 
