@@ -7,11 +7,9 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 public class ProjectileController {
     private static final int MAX_PROJECTILES = 100;
     private Projectile[] items;
-    private boolean autoFireMode = false;
 
-
-    public void switchAutoFireMode() {
-        autoFireMode = !autoFireMode;
+    public Projectile[] getItems() {
+        return items;
     }
 
     public ProjectileController(TextureAtlas atlas) {
@@ -23,15 +21,10 @@ public class ProjectileController {
     }
 
     public void activate(float x, float y, float vx, float vy) {
-        activate(x, y, vx, vy, autoFireMode? 1: 2);
-    }
-
-    public void activate(float x, float y, float vx, float vy, int pNumber) {
         for (Projectile p : items) {
-            if (pNumber == 0) break;
             if (!p.isActive()) {
-                p.activate(x , y, vx, vy + (pNumber - 1) * 10);
-                pNumber--;
+                p.activate(x, y, vx, vy);
+                return;
             }
         }
     }
