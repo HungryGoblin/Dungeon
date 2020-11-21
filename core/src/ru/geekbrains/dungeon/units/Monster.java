@@ -48,14 +48,23 @@ public class Monster extends Unit {
         float bestDst = 10000;
         for (int i = cellX - 1; i <= cellX + 1; i++) {
             for (int j = cellY - 1; j <= cellY + 1; j++) {
-                if (Math.abs(cellX - i) + Math.abs(cellY - j) == 1 && gc.getGameMap().isCellPassable(i, j) && gc.getUnitController().isCellFree(i, j)) {
-                    float dst = (float) Math.sqrt((i - target.getCellX()) * (i - target.getCellX()) + (j - target.getCellY()) * (j - target.getCellY()));
-                    if (dst < bestDst) {
+                if (Math.abs(cellX - i) + Math.abs(cellY - j) == 1 &&
+                        gc.getGameMap().isCellPassable(i, j) &&
+                        gc.getUnitController().isCellFree(i, j)) {
+                    float dst = (float) Math.sqrt((i - target.getCellX()) * (i - target.getCellX()) +
+                            (j - target.getCellY()) * (j - target.getCellY()));
+                    if (dst < bestDst && isTargetVisible(target)) {
                         bestDst = dst;
                         bestX = i;
                         bestY = j;
                     }
                 }
+            }
+        }
+        if (bestX < 0 || bestY < 0) {
+            while (!gc.getGameMap().isCellPassable(bestX, bestY)) {
+                bestX = (int) Math.floor(Math.random() * 3 - 1 + cellX);
+                bestY = (int) Math.floor(Math.random() * 3 - 1 + cellY);
             }
         }
         goTo(bestX, bestY);

@@ -19,6 +19,7 @@ public abstract class Unit {
     int cellX;
     int cellY;
     int attackRange;
+    int visibleRange;
     float movementTime;
     float movementMaxTime;
     int targetX, targetY;
@@ -53,6 +54,7 @@ public abstract class Unit {
         this.maxTurns = 5;
         this.movementMaxTime = 0.2f;
         this.attackRange = 2;
+        this.visibleRange = 5;
     }
 
     public void startTurn() {
@@ -80,7 +82,8 @@ public abstract class Unit {
     }
 
     public void goTo(int argCellX, int argCellY) {
-        if (!gc.getGameMap().isCellPassable(argCellX, argCellY) || !gc.getUnitController().isCellFree(argCellX, argCellY)) {
+        if (!gc.getGameMap().isCellPassable(argCellX, argCellY) ||
+                !gc.getUnitController().isCellFree(argCellX, argCellY)) {
             return;
         }
         if (Math.abs(argCellX - cellX) + Math.abs(argCellY - cellY) == 1) {
@@ -92,6 +95,11 @@ public abstract class Unit {
     public boolean canIAttackThisTarget(Unit target) {
         return cellX - target.getCellX() == 0 && Math.abs(cellY - target.getCellY()) <= attackRange ||
                 cellY - target.getCellY() == 0 && Math.abs(cellX - target.getCellX()) <= attackRange;
+    }
+
+    public boolean isTargetVisible(Unit target) {
+        return cellX - target.getCellX() == 0 && Math.abs(cellY - target.getCellY()) <= visibleRange ||
+                cellY - target.getCellY() == 0 && Math.abs(cellX - target.getCellX()) <= visibleRange;
     }
 
     public void attack(Unit target) {

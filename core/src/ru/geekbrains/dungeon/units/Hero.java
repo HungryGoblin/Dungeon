@@ -1,13 +1,8 @@
 package ru.geekbrains.dungeon.units;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
-import com.badlogic.gdx.math.MathUtils;
-import ru.geekbrains.dungeon.BattleCalc;
 import ru.geekbrains.dungeon.GameController;
-import ru.geekbrains.dungeon.GameMap;
 
 public class Hero extends Unit {
     public Hero(TextureAtlas atlas, GameController gc) {
