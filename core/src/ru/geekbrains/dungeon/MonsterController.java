@@ -43,24 +43,10 @@ public class MonsterController {
         return null;
     }
 
-
-    public int getDamage () {
-        int damage = 0;
-        for (Monster m : monsters) {
-            if (m.isActive()) {
-                damage += m.getRetDamage();
-                m.setRetDamage(0);
-            }
-        }
-        return damage;
-    }
-
-
     public void update(float dt) {
         for (Monster m : monsters) {
             if (m.isActive()) {
                 m.update(dt);
-
             }
         }
     }
