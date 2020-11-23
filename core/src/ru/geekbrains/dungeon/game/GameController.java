@@ -1,16 +1,25 @@
-package ru.geekbrains.dungeon;
+package ru.geekbrains.dungeon.game;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
-import ru.geekbrains.dungeon.units.Hero;
-import ru.geekbrains.dungeon.units.Monster;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class GameController {
+    private SpriteBatch batch;
     private ProjectileController projectileController;
     private UnitController unitController;
     private GameMap gameMap;
 
+    private int round = 1;
     private int cursorX, cursorY;
+
+    public int getRound() {
+        return round;
+    }
+
+    public void newRound() {
+        round++;
+        if (round % 3 == 0) unitController.getMonsterController().spawn(1);
+    }
 
     public int getCursorX() {
         return cursorX;
@@ -32,10 +41,11 @@ public class GameController {
         return unitController;
     }
 
-    public GameController(TextureAtlas atlas) {
-        this.gameMap = new GameMap(atlas);
-        this.unitController = new UnitController(this, atlas);
-        this.projectileController = new ProjectileController(atlas);
+    public GameController(SpriteBatch batch) {
+        this.batch = batch;
+        this.gameMap = new GameMap();
+        this.unitController = new UnitController(this);
+        this.projectileController = new ProjectileController();
         this.unitController.init();
     }
 
