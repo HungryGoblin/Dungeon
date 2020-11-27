@@ -1,13 +1,9 @@
-package ru.geekbrains.dungeon;
+package ru.geekbrains.dungeon.game;
 
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
-import ru.geekbrains.dungeon.units.Hero;
-import ru.geekbrains.dungeon.units.Monster;
-import ru.geekbrains.dungeon.units.Unit;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class UnitController {
@@ -16,7 +12,7 @@ public class UnitController {
     private Hero hero;
     private Unit currentUnit;
     private int index;
-    private List<Unit> allUnits;
+    private List<Unit> allUnits = new ArrayList<>();
 
     public MonsterController getMonsterController() {
         return monsterController;
@@ -39,38 +35,41 @@ public class UnitController {
         return true;
     }
 
-    public UnitController(GameController gc, TextureAtlas atlas) {
+    public UnitController(GameController gc) {
         this.gc = gc;
-        this.hero = new Hero(atlas, gc);
-        this.monsterController = new MonsterController(gc, atlas);
+        this.hero = new Hero(gc);
+        this.monsterController = new MonsterController(gc);
     }
 
     public void init() {
-        this.monsterController.activate(5, 5);
-        this.monsterController.activate(9, 5);
         this.index = -1;
-        this.allUnits = new ArrayList<>();
-        this.allUnits.add(hero);
-        for (Monster m : monsterController.getMonsters()) {
-            if (m.isActive()) {
-                this.allUnits.add(m);
-            }
-        }
+        addActive(hero);
+        this.monsterController.spawn(2);
         this.nextTurn();
     }
+
+    public void addActive(Unit unit) {
+        allUnits.add(unit);
+    }
+
+    public void addActive(List unitList) {
+        allUnits.addAll(unitList);
+    }
+
 
     public void nextTurn() {
         index++;
         if (index >= allUnits.size()) {
             index = 0;
+            gc.newRound();
         }
         currentUnit = allUnits.get(index);
         currentUnit.startTurn();
     }
 
-    public void render(SpriteBatch batch) {
-        hero.render(batch);
-        monsterController.render(batch);
+    public void render(SpriteBatch batch, BitmapFont font18) {
+        hero.render(batch, font18);
+        monsterController.render(batch, font18);
     }
 
     public void update(float dt) {

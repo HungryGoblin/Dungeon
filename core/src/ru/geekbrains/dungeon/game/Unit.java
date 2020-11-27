@@ -1,14 +1,13 @@
-package ru.geekbrains.dungeon.units;
+package ru.geekbrains.dungeon.game;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.Vector2;
-import ru.geekbrains.dungeon.BattleCalc;
-import ru.geekbrains.dungeon.GameController;
-import ru.geekbrains.dungeon.GameMap;
+import com.badlogic.gdx.math.MathUtils;
+import ru.geekbrains.dungeon.helpers.Poolable;
 
-public abstract class Unit {
+public abstract class Unit implements Poolable {
     GameController gc;
     TextureRegion texture;
     TextureRegion textureHp;
@@ -23,6 +22,7 @@ public abstract class Unit {
     float movementMaxTime;
     int targetX, targetY;
     int turns, maxTurns;
+    float innerTimer;
 
     public int getDefence() {
         return defence;
@@ -53,12 +53,20 @@ public abstract class Unit {
         this.maxTurns = 5;
         this.movementMaxTime = 0.2f;
         this.attackRange = 2;
+        this.innerTimer = MathUtils.random(1000.0f);
+    }
+
+    public void Cure(int hp) {
+        this.hp += hp;
+        if (this.hp > hpMax) this.hp = hpMax;
     }
 
     public void startTurn() {
         turns = maxTurns;
+        Cure(1);
     }
 
+    @Override
     public boolean isActive() {
         return hp > 0;
     }
@@ -68,6 +76,7 @@ public abstract class Unit {
         if (hp <= 0) {
             gc.getUnitController().removeUnitAfterDeath(this);
         }
+
         return hp <= 0;
     }
 
@@ -101,6 +110,7 @@ public abstract class Unit {
     }
 
     public void update(float dt) {
+        innerTimer += dt;
         if (!isStayStill()) {
             movementTime += dt;
             if (movementTime > movementMaxTime) {
@@ -112,24 +122,35 @@ public abstract class Unit {
         }
     }
 
-    public void render(SpriteBatch batch) {
+    public void render(SpriteBatch batch, BitmapFont font18) {
         float px = cellX * GameMap.CELL_SIZE;
         float py = cellY * GameMap.CELL_SIZE;
         if (!isStayStill()) {
             px = cellX * GameMap.CELL_SIZE + (targetX - cellX) * (movementTime / movementMaxTime) * GameMap.CELL_SIZE;
             py = cellY * GameMap.CELL_SIZE + (targetY - cellY) * (movementTime / movementMaxTime) * GameMap.CELL_SIZE;
         }
+        float barX = px, barY = py + MathUtils.sin(innerTimer * 5.0f) * 2;
+        float alpha = hp >= hpMax ? 0.2f : 1f;
         batch.draw(texture, px, py);
-        batch.setColor(0.0f, 0.0f, 0.0f, 1.0f);
+        batch.setColor(0.0f, 0.0f, 0.0f, alpha);
         batch.draw(textureHp, px + 1, py + 51, 58, 10);
-        batch.setColor(0.7f, 0.0f, 0.0f, 1.0f);
-        batch.draw(textureHp, px + 2, py + 52, 56, 8);
-        batch.setColor(0.0f, 1.0f, 0.0f, 1.0f);
-        batch.draw(textureHp, px + 2, py + 52, (float) hp / hpMax * 56, 8);
+        batch.setColor(0.7f, 0.0f, 0.0f, alpha);
+        batch.draw(textureHp, barX + 2, barY + 52, 56, 8);
+        batch.setColor(0.0f, 1.0f, 0.0f, alpha);
+        batch.draw(textureHp, barX + 2, barY + 52, (float) hp / hpMax * 56, 8);
         batch.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+        font18.draw(batch, "" + hp, barX, barY + 64, 60, 1, false);
     }
 
     public int getTurns() {
         return turns;
+    }
+
+    public boolean isCellEmpty(int cx, int cy) {
+        return gc.getGameMap().isCellPassable(cx, cy) && gc.getUnitController().isCellFree(cx, cy);
+    }
+
+    public boolean amIBlocked() {
+        return !(isCellEmpty(cellX - 1, cellY) || isCellEmpty(cellX + 1, cellY) || isCellEmpty(cellX, cellY - 1) || isCellEmpty(cellX, cellY + 1));
     }
 }
