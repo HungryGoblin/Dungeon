@@ -1,12 +1,13 @@
 package ru.geekbrains.dungeon.game;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
+import lombok.Data;
 import ru.geekbrains.dungeon.helpers.Poolable;
 
+@Data
 public abstract class Unit implements Poolable {
     GameController gc;
     TextureRegion texture;
@@ -17,28 +18,16 @@ public abstract class Unit implements Poolable {
     int hpMax;
     int cellX;
     int cellY;
+    int gold;
     int attackRange;
     float movementTime;
     float movementMaxTime;
     int targetX, targetY;
-    int turns, maxTurns;
     float innerTimer;
-
-    public int getDefence() {
-        return defence;
-    }
-
-    public int getDamage() {
-        return damage;
-    }
-
-    public int getCellX() {
-        return cellX;
-    }
-
-    public int getCellY() {
-        return cellY;
-    }
+    int maxTurns;
+    int maxAttacks;
+    int turns, attacks;
+    StringBuilder stringHelper;
 
     public Unit(GameController gc, int cellX, int cellY, int hpMax) {
         this.gc = gc;
@@ -49,21 +38,40 @@ public abstract class Unit implements Poolable {
         this.targetX = cellX;
         this.targetY = cellY;
         this.damage = 2;
-        this.defence = 1;
-        this.maxTurns = 5;
+        this.defence = 0;
+        this.maxTurns = GameController.TURNS_COUNT;
+        this.maxAttacks = GameController.ATTACKS_COUNT;
         this.movementMaxTime = 0.2f;
         this.attackRange = 2;
         this.innerTimer = MathUtils.random(1000.0f);
+        this.stringHelper = new StringBuilder();
+        this.gold = MathUtils.random(1, 5);
+        setRandomAbilities();
     }
 
-    public void Cure(int hp) {
-        this.hp += hp;
-        if (this.hp > hpMax) this.hp = hpMax;
+    public void addGold(int amount) {
+        gold += amount;
+    }
+
+    public void cure(int amount) {
+        hp += amount;
+        if (hp > hpMax) {
+            hp = hpMax;
+        }
+    }
+
+
+    private void setRandomAbilities() {
+        turns = MathUtils.random(maxTurns - 1) + 1;
+        attacks = MathUtils.random(maxAttacks - 1) + 1;
     }
 
     public void startTurn() {
-        turns = maxTurns;
-        Cure(1);
+        setRandomAbilities();
+    }
+
+    public void startRound() {
+        cure(1);
     }
 
     @Override
@@ -71,17 +79,17 @@ public abstract class Unit implements Poolable {
         return hp > 0;
     }
 
-    public boolean takeDamage(int amount) {
+    public boolean takeDamage(Unit source, int amount) {
         hp -= amount;
         if (hp <= 0) {
             gc.getUnitController().removeUnitAfterDeath(this);
+            source.addGold(this.gold);
         }
-
         return hp <= 0;
     }
 
     public boolean canIMakeAction() {
-        return gc.getUnitController().isItMyTurn(this) && turns > 0 && isStayStill();
+        return gc.getUnitController().isItMyTurn(this) && (turns > 0 || attacks > 0) && isStayStill();
     }
 
     public boolean isStayStill() {
@@ -99,14 +107,15 @@ public abstract class Unit implements Poolable {
     }
 
     public boolean canIAttackThisTarget(Unit target) {
-        return cellX - target.getCellX() == 0 && Math.abs(cellY - target.getCellY()) <= attackRange ||
-                cellY - target.getCellY() == 0 && Math.abs(cellX - target.getCellX()) <= attackRange;
+        return attacks > 0 && (
+                cellX - target.getCellX() == 0 && Math.abs(cellY - target.getCellY()) <= attackRange ||
+                cellY - target.getCellY() == 0 && Math.abs(cellX - target.getCellX()) <= attackRange);
     }
 
     public void attack(Unit target) {
-        target.takeDamage(BattleCalc.attack(this, target));
-        this.takeDamage(BattleCalc.checkCounterAttack(this, target));
-        turns--;
+        target.takeDamage(this, BattleCalc.attack(this, target));
+        this.takeDamage(target, BattleCalc.checkCounterAttack(this, target));
+        attacks--;
     }
 
     public void update(float dt) {
@@ -123,34 +132,38 @@ public abstract class Unit implements Poolable {
     }
 
     public void render(SpriteBatch batch, BitmapFont font18) {
+        float hpAlpha = hp == hpMax ? 0.4f : 1.0f;
+
         float px = cellX * GameMap.CELL_SIZE;
         float py = cellY * GameMap.CELL_SIZE;
+
         if (!isStayStill()) {
             px = cellX * GameMap.CELL_SIZE + (targetX - cellX) * (movementTime / movementMaxTime) * GameMap.CELL_SIZE;
             py = cellY * GameMap.CELL_SIZE + (targetY - cellY) * (movementTime / movementMaxTime) * GameMap.CELL_SIZE;
         }
-        float barX = px, barY = py + MathUtils.sin(innerTimer * 5.0f) * 2;
-        float alpha = hp >= hpMax ? 0.2f : 1f;
+
         batch.draw(texture, px, py);
-        batch.setColor(0.0f, 0.0f, 0.0f, alpha);
-        batch.draw(textureHp, px + 1, py + 51, 58, 10);
-        batch.setColor(0.7f, 0.0f, 0.0f, alpha);
+        batch.setColor(0.0f, 0.0f, 0.0f, hpAlpha);
+
+        float barX = px, barY = py + MathUtils.sin(innerTimer * 5.0f) * 2;
+        batch.draw(textureHp, barX + 1, barY + 51, 58, 10);
+        batch.setColor(0.7f, 0.0f, 0.0f, hpAlpha);
         batch.draw(textureHp, barX + 2, barY + 52, 56, 8);
-        batch.setColor(0.0f, 1.0f, 0.0f, alpha);
+        batch.setColor(0.0f, 1.0f, 0.0f, hpAlpha);
         batch.draw(textureHp, barX + 2, barY + 52, (float) hp / hpMax * 56, 8);
+        batch.setColor(1.0f, 1.0f, 1.0f, hpAlpha);
+        stringHelper.setLength(0);
+        stringHelper.append(hp);
+        stringHelper.append(String.format(" S%d/A%d", turns, attacks));
+        font18.setColor(1.0f, 1.0f, 1.0f, hpAlpha);
+        font18.draw(batch, stringHelper, barX, barY + 80, 60, 1, false);
+
+        font18.setColor(1.0f, 1.0f, 1.0f, 1.0f);
         batch.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-        font18.draw(batch, "" + hp, barX, barY + 64, 60, 1, false);
     }
 
-    public int getTurns() {
-        return turns;
-    }
-
-    public boolean isCellEmpty(int cx, int cy) {
-        return gc.getGameMap().isCellPassable(cx, cy) && gc.getUnitController().isCellFree(cx, cy);
-    }
 
     public boolean amIBlocked() {
-        return !(isCellEmpty(cellX - 1, cellY) || isCellEmpty(cellX + 1, cellY) || isCellEmpty(cellX, cellY - 1) || isCellEmpty(cellX, cellY + 1));
+        return !(gc.isCellEmpty(cellX - 1, cellY) || gc.isCellEmpty(cellX + 1, cellY) || gc.isCellEmpty(cellX, cellY - 1) || gc.isCellEmpty(cellX, cellY + 1));
     }
 }
