@@ -1,58 +1,81 @@
 package ru.geekbrains.dungeon.game;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector2;
+import lombok.Data;
+import ru.geekbrains.dungeon.screens.ScreenManager;
 
+@Data
 public class GameController {
+    public static final int INITIAL_MONSTERS_COUNT = 3;
+    public static final int TURNS_COUNT = 4;
+    public static final int ATTACKS_COUNT = 4;
     private SpriteBatch batch;
     private ProjectileController projectileController;
     private UnitController unitController;
     private GameMap gameMap;
 
-    private int round = 1;
+    private Vector2 mouse;
+    private Vector2 pressedMouse;
+
     private int cursorX, cursorY;
+    private int round;
 
-    public int getRound() {
-        return round;
-    }
-
-    public void newRound() {
-        round++;
-        if (round % 3 == 0) unitController.getMonsterController().spawn(1);
-    }
-
-    public int getCursorX() {
-        return cursorX;
-    }
-
-    public int getCursorY() {
-        return cursorY;
-    }
-
-    public ProjectileController getProjectileController() {
-        return projectileController;
-    }
-
-    public GameMap getGameMap() {
-        return gameMap;
-    }
-
-    public UnitController getUnitController() {
-        return unitController;
+    public GameMap.Cell getMapCell(int x, int y) {
+        return gameMap.getCell(x, y);
     }
 
     public GameController(SpriteBatch batch) {
         this.batch = batch;
+        this.mouse = new Vector2(0, 0);
+        this.pressedMouse = new Vector2(0, 0);
         this.gameMap = new GameMap();
         this.unitController = new UnitController(this);
         this.projectileController = new ProjectileController();
-        this.unitController.init();
+        this.unitController.init(INITIAL_MONSTERS_COUNT);
+        this.round = 1;
+    }
+
+    public void roundUp() {
+        round++;
+        unitController.startRound();
+        if (round % 3 == 0) {
+            unitController.createMonsterInRandomCell();
+        }
+    }
+
+    public boolean isCellEmpty(int cx, int cy) {
+        return gameMap.isCellPassable(cx, cy) && unitController.isCellFree(cx, cy);
     }
 
     public void update(float dt) {
-        cursorX = (Gdx.input.getX() / GameMap.CELL_SIZE);
-        cursorY = ((720 - Gdx.input.getY()) / GameMap.CELL_SIZE);
+        checkMouse();
         projectileController.update(dt);
         unitController.update(dt);
+    }
+
+    public void checkMouse() {
+        mouse.set(Gdx.input.getX(), Gdx.input.getY());
+        ScreenManager.getInstance().getViewport().unproject(mouse);
+
+        if (Gdx.input.isTouched() && Gdx.input.isButtonPressed(Input.Buttons.RIGHT)) {
+            float camX = ScreenManager.getInstance().getCamera().position.x;
+            float camY = ScreenManager.getInstance().getCamera().position.y;
+
+            camX += pressedMouse.x - mouse.x;
+            camY += pressedMouse.y - mouse.y;
+
+            mouse.x += pressedMouse.x - mouse.x;
+            mouse.y += pressedMouse.y - mouse.y;
+
+            ScreenManager.getInstance().pointCameraTo(camX, camY);
+        }
+
+        cursorX = (int) (mouse.x / GameMap.CELL_SIZE);
+        cursorY = (int) (mouse.y / GameMap.CELL_SIZE);
+
+        pressedMouse.set(mouse);
     }
 }
