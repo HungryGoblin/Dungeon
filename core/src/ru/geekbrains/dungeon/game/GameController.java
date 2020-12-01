@@ -12,7 +12,6 @@ public class GameController {
     public static final int INITIAL_MONSTERS_COUNT = 3;
     public static final int TURNS_COUNT = 4;
     public static final int ATTACKS_COUNT = 4;
-
     private SpriteBatch batch;
     private ProjectileController projectileController;
     private UnitController unitController;
@@ -23,6 +22,10 @@ public class GameController {
 
     private int cursorX, cursorY;
     private int round;
+
+    public GameMap.Cell getMapCell(int x, int y) {
+        return gameMap.getCell(x, y);
+    }
 
     public GameController(SpriteBatch batch) {
         this.batch = batch;
@@ -49,15 +52,8 @@ public class GameController {
 
     public void update(float dt) {
         checkMouse();
-        checkSpace();
         projectileController.update(dt);
         unitController.update(dt);
-    }
-
-    public void checkSpace() {
-        if (Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
-            this.unitController.nextTurn();
-        }
     }
 
     public void checkMouse() {

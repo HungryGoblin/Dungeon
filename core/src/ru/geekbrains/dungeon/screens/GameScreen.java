@@ -1,11 +1,9 @@
 package ru.geekbrains.dungeon.screens;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import lombok.Data;
 import ru.geekbrains.dungeon.game.GameController;
 import ru.geekbrains.dungeon.game.WorldRenderer;
 
-@Data
 public class GameScreen extends AbstractScreen {
     private GameController gameController;
     private WorldRenderer worldRenderer;
